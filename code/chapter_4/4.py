@@ -69,12 +69,12 @@ class GiniIndexDecisionTree(object):
         tree = GiniIndexDecisionTree.generate_decision_tree_without_pruning(df)
 
         # 采用后剪枝对决策树剪枝
-        tree.post_pruning(df_train, df_validate)
+        tree_with_post_pruning = tree.post_pruning(df, df_validate)
 
         # 返回剪枝后的决策树节点
-        return tree
+        return tree_with_post_pruning
 
-    def post_pruning(self, df_train: pd.DataFrame, df_validate: pd.DataFrame) -> None:
+    def post_pruning(self, df_train: pd.DataFrame, df_validate: pd.DataFrame):
         """
         对未剪枝的决策树进行剪枝
         :param df_train: 训练集
@@ -83,16 +83,11 @@ class GiniIndexDecisionTree(object):
         """
         # 如果验证集为空
         if df_validate is None or len(df_validate) == 0:
-            return
+            return self
 
         # 如果决策树节点为叶子节点，那么不需要剪枝
         if self.is_leaf:
-            return
-
-        # 如果包含非叶子节点，那么不剪枝
-        for attribute_value in self.sub_trees:
-            if self.sub_trees[attribute_value].is_leaf is False:
-                return
+            return self
 
         # 自底向上剪枝
         for attribute_value in self.sub_trees:
@@ -100,13 +95,18 @@ class GiniIndexDecisionTree(object):
             sub_df_validate = df_validate[df_validate.loc[:, self.attribute] == attribute_value]
             self.sub_trees[attribute_value].post_pruning(sub_df_train, sub_df_validate)
 
+        # 如果包含非叶子节点，那么不剪枝
+        for attribute_value in self.sub_trees:
+            if self.sub_trees[attribute_value].is_leaf is False:
+                return self
+
         # 计算剪枝前的精度
         acc_before_pruning = self.predict(df_validate)
 
         # 计算剪枝后的精度
         sub_trees = pd.value_counts(df_train.iloc[:, -1]).index[0]
         acc_after_pruning \
-            = df_validate[df_validate[:, -1] == sub_trees].shape[0] * 1.0 / df_validate.shape[0]
+            = df_validate[df_validate.iloc[:, -1] == sub_trees].shape[0] * 1.0 / df_validate.shape[0]
 
         # 如果剪枝后的精度大于等于剪枝前的精度，那么剪枝
         # 注：对于精度相等的情况，虽然验证集精度没有提高，但是根据奥卡姆提到准则，剪枝后的模型更好，所以采取剪枝
@@ -114,6 +114,7 @@ class GiniIndexDecisionTree(object):
             self.sub_trees = sub_trees
             self.is_leaf = True
             self.attribute = None
+        return self
 
     @staticmethod
     def generate_decision_tree_without_pruning(df: pd.DataFrame):
@@ -144,7 +145,7 @@ class GiniIndexDecisionTree(object):
         for attribute in attributes:
             cur_gini_index = GiniIndexDecisionTree.compute_gini_index(df, attribute)
 
-            if cur_gini_index <= min_gini_index:
+            if cur_gini_index < min_gini_index:
                 min_gini_index = cur_gini_index
                 best_split_attribute = attribute
             # print('{}: {}'.format(attribute, cur_gini_index))
@@ -214,7 +215,8 @@ class GiniIndexDecisionTree(object):
         acc_with_pre_pruning = true_count / df_validate.shape[0]
 
         # 3. 判断是否进行预剪枝
-        if acc_without_pruning > acc_with_pre_pruning:
+        if acc_with_pre_pruning > acc_without_pruning:
+            # 如果预剪枝的精度更大，那么进行剪枝
             return GiniIndexDecisionTree(is_leaf=True, sub_trees=cur_best_label)
 
         # 使用最佳属性进行节点划分
@@ -229,7 +231,6 @@ class GiniIndexDecisionTree(object):
                 = GiniIndexDecisionTree.generate_decision_tree_with_pre_pruning(sub_df, sub_df_validate)
 
         return tree
-
 
 
     def predict(self, df: pd.DataFrame) -> float:
@@ -261,9 +262,10 @@ class GiniIndexDecisionTree(object):
             return self.sub_trees[x[self.attribute]]._predict(x)
 
 
-if __name__ == '__main__':
+def main():
+    # 主函数
     # 读取训练集数据和验证集数据
-    # 这里由于训练集过于小，所以对生成的未剪枝和剪枝后的精度对比有可能一致
+    # 这里由于训练集过于小，所以对生成的未剪枝和剪枝后的精度对比一致
     df_train = pd.read_csv('../../data/chapter_4/watermelon_train.csv')
     df_validate = pd.read_csv('../../data/chapter_4/watermelon_validate.csv')
 
@@ -285,3 +287,7 @@ if __name__ == '__main__':
     tree_with_post_pruning = GiniIndexDecisionTree.generate_decision_tree_with_post_pruning(df_train, df_validate)
     acc_with_post_pruning = tree_with_post_pruning.predict(df_validate)
     print("acc_with_post_pruning: ", acc_with_post_pruning)
+
+
+if __name__ == '__main__':
+    main()
