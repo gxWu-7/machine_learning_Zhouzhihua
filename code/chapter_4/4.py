@@ -265,7 +265,6 @@ class GiniIndexDecisionTree(object):
 def main():
     # 主函数
     # 读取训练集数据和验证集数据
-    # 这里由于训练集过于小，所以对生成的未剪枝和剪枝后的精度对比一致
     df_train = pd.read_csv('../../data/chapter_4/watermelon_train.csv')
     df_validate = pd.read_csv('../../data/chapter_4/watermelon_validate.csv')
 
