@@ -48,13 +48,19 @@ class AODEClassifier(object):
         :return:
         """
         for label in self.labels:
+            # 遍历每个数据的每个类别
             self.p_c_xi[label] = {}
             for attribute in self.supper_parent:
+                # 遍历每个超父
+                # 筛选出类别为label的数据
                 X_label = X[y == label]
                 self.p_c_xi[label][attribute] = {}
                 for attribute_value in self.supper_parent[attribute]:
+                    # 筛选出类别为label，超父属性取值为attribute_value的数据
                     X_label_attribute_value = X_label[X_label.loc[:, attribute] == attribute_value]
                     N_i = len(self.supper_parent[attribute])
+
+                    # 计算概率并保存
                     self.p_c_xi[label][attribute][attribute_value] \
                         = (X_label_attribute_value.shape[0] + 1.0) / (X.shape[0] + self.N * N_i)
 
@@ -78,6 +84,7 @@ class AODEClassifier(object):
                         N_j = attribute_values.shape[0]
                         for xj in attribute_values:
                             X_label_xi_xj = X_label_xi[X_label_xi.loc[:, attribute] == xj]
+                            # 计算概率并保存
                             self.p_xj_or_c_xi[label][xi][xj] \
                                 = (X_label_xi_xj.shape[0] + 1.0) / (X_label_xi.shape[0] + N_j)
 
@@ -108,6 +115,7 @@ class AODEClassifier(object):
         best_label = None
         m = X.shape[0]
 
+        # 根据公式7.23计算概率
         for index in range(m):
             x_ = X.iloc[index, :]
             for label in self.labels:
@@ -119,7 +127,9 @@ class AODEClassifier(object):
                             xj = x_[xj_attribute]
                             sub_p += np.log(self.p_xj_or_c_xi[label][xi][xj])
                         p_c_or_x += sub_p
+
                 if p_c_or_x > max_p:
+                    # 如果当前label的概率大于之前label的概率，更新
                     max_p = p_c_or_x
                     best_label = label
             y_predict.append(best_label)
