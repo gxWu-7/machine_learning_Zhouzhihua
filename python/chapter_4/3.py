@@ -149,7 +149,8 @@ class InformationEntropyDecisionTree(object):
             if df.loc[:, attribute].dtype == np.float or df.loc[:, attribute].dtype == np.int:
                 # 如果该属性取值为连续值
                 cur_entropy_gain, split_value \
-                    = InformationEntropyDecisionTree.get_continuous_entropy_gain_and_attribute_split_value(df, attribute)
+                    = InformationEntropyDecisionTree.get_continuous_entropy_gain_and_attribute_split_value(df,
+                                                                                                           attribute)
 
                 if cur_entropy_gain > max_entropy_gain:
                     best_split_attribute = attribute
@@ -257,15 +258,20 @@ class InformationEntropyDecisionTree(object):
         return tree
 
 
-if __name__ == '__main__':
+def main():
     df = pd.read_csv('../../data/chapter_4/watermelon_dataset.csv')
 
     # 使用不含连续值属性的数据集生成决策树
     df_has_not_continuous_attributes = df.drop(['编号', '密度', '含糖率'], axis=1)
-    tree_has_not_continuous_attributes = InformationEntropyDecisionTree.generate_decision_tree(df=df_has_not_continuous_attributes,
-                                                                                               has_continuous_attribute=False)
+    tree_has_not_continuous_attributes = InformationEntropyDecisionTree.generate_decision_tree(
+        df=df_has_not_continuous_attributes,
+        has_continuous_attribute=False)
 
     # 使用包含连续值属性的数据集生成决策树
     df_has_continue_attributes = df.drop(['编号'], axis=1)
-    tree_has_continuous_attributes = InformationEntropyDecisionTree.generate_decision_tree(df=df_has_continue_attributes)
+    tree_has_continuous_attributes = InformationEntropyDecisionTree.generate_decision_tree(
+        df=df_has_continue_attributes)
 
+
+if __name__ == '__main__':
+    main()

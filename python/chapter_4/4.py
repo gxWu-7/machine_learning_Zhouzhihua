@@ -232,7 +232,6 @@ class GiniIndexDecisionTree(object):
 
         return tree
 
-
     def predict(self, df: pd.DataFrame) -> float:
         """
         这里的predict仅返回对df进行预测后与正确的类别对比的精度
